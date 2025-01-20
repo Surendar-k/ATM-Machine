@@ -1,85 +1,154 @@
 import java.util.Scanner;
-import java.util.*;
+import java.text.NumberFormat;
+import java.util.Locale;
 
-public class ATM{
-    public static void main(String[] args){
-        int pin=2004;       //pin number
-        int balance=1000;   //balance
-        int deposit=0;      //deposit
-        int withdraw=0;     //withdraw
-        int totalbalance;   //totalbalance
-        int receipt;     //receipt
+public class ATM {
+    private static final String BANK_NAME = "=== Welcome to High-Tech ATM ===";
+    private static String userName;
+    private static int userPin;
+    private static double userBalance;
 
-        String name;        //user name
-        Scanner sc=new Scanner(System.in);
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
 
-        // Entering the PIN NUMBER
-        System.out.println("\n"+ "$$$ This is a ATM Bank $$$" +"\n");
+        // Initial setup: Get user details
+        printDashedLine(40);
+        System.out.println("\n" + BANK_NAME + "\n");
+        printDashedLine(40);
 
-        System.out.println("Enter Your PIN Number: ");
-        int password=sc.nextInt();      // input by the user
+        System.out.print("Please enter your name: ");
+        userName = sc.nextLine();
 
-        if(password==pin){
-            System.out.println("Enter Your Name ");
-            name=sc.next();
-            System.out.println("\n"+ "------Hello "+name+"------");
+        System.out.print("Set your 4-digit PIN: ");
+        userPin = sc.nextInt();
 
-            while(true){
-                System.out.println("Enter 1 to check your Balance");
-                System.out.println("Enter 2 to Deposit");
-                System.out.println("Enter 3 to Withdraw");
-                System.out.println("Enter 4 to print receipt");
-                System.out.println("Enter 5 to end the transaction");
-                System.out.println("--------------------------------");
-                int options=sc.nextInt();
-                switch(options) {
-                    case 1:
-                        System.out.println("->Your Current Balance is " + balance+"\n");
-                        break;
-                    case 2:
-                        System.out.println("Enter your amount to deposit ");
-                        deposit = sc.nextInt();
-                        balance = balance + deposit;
-                        System.out.println("\n"+"->Your amount is deposited successfully");
-                        break;
-                    case 3:
-                        System.out.println("Enter amount to Withdraw");
-                        withdraw = sc.nextInt();
-                        if (withdraw > balance) {
-                            System.out.println("*** You have not enough balance to do this transaction*** ");
-                        } else {
-                            System.out.println("\n"+"->Your current Withdrawl is " + withdraw);
-                            balance = balance - withdraw;
-                        }
-                        break;
-                    case 4:
-                        System.out.println("===Do You need receipt?===");
-                        System.out.println("Enter 1 to print the receipt");
-                        System.out.println("Enter 0 to no need");
-                        receipt = sc.nextInt();
-                        if (receipt == 1) {
-                            totalbalance = balance + deposit - withdraw;
-                            System.out.println("\n"+"*******************************");
-                            System.out.println("$$$ This is a ATM Bank $$$");
-                            System.out.println("->Available Balance: " + balance);
-                            System.out.println("->Amount deposited: " + deposit);
-                            System.out.println("->Amount withdraw:" + withdraw);
-                            System.out.println("->Your total balance is: " + totalbalance);
-                            System.out.println("*****************************");
-                        } else {
-                            System.out.println("# Thank you for this transaction #");
-                        }
-                        break;
-                }
-                        if(options==5){
-                            System.out.println("Your transaction is successfully ended");
-                            break;
-                }
+        while (String.valueOf(userPin).length() != 4) {
+            System.out.print("Invalid PIN. Please enter a 4-digit PIN: ");
+            userPin = sc.nextInt();
+        }
+
+        System.out.print("Enter your initial deposit amount (₹): ");
+        userBalance = sc.nextDouble();
+
+        while (userBalance < 0) {
+            System.out.print("Invalid amount. Please enter a positive value: ");
+            userBalance = sc.nextDouble();
+        }
+
+        System.out.println("\nAccount setup complete! Welcome, " + userName + "!\n");
+
+        // Start the ATM operations
+        authenticateUser(sc);
+    }
+
+    private static void authenticateUser(Scanner sc) {
+        int attempts = 0;
+        final int MAX_ATTEMPTS = 3;
+
+        System.out.println("\nPlease authenticate to access your account.");
+        while (attempts < MAX_ATTEMPTS) {
+            System.out.print("Enter your PIN: ");
+            int enteredPin = sc.nextInt();
+
+            if (enteredPin == userPin) {
+                System.out.println("Authentication successful!");
+                mainMenu(sc);
+                return;
+            } else {
+                attempts++;
+                System.out.println("Incorrect PIN. Attempts left: " + (MAX_ATTEMPTS - attempts));
             }
         }
-        else{
-            System.out.println("Your PIN Number is incorrect");
-            System.out.println("Please Try again");
+
+        System.out.println("Too many failed attempts. Exiting...");
+    }
+
+    private static void mainMenu(Scanner sc) {
+        boolean sessionActive = true;
+
+        while (sessionActive) {
+            printDashedLine(40);
+            System.out.println("\n1. Check Balance");
+            System.out.println("2. Deposit Money");
+            System.out.println("3. Withdraw Money");
+            System.out.println("4. Print Receipt");
+            System.out.println("5. Exit");
+            printDashedLine(40);
+            System.out.print("Choose an option: ");
+            int choice = sc.nextInt();
+
+            switch (choice) {
+                case 1:
+                    checkBalance();
+                    break;
+                case 2:
+                    depositMoney(sc);
+                    break;
+                case 3:
+                    withdrawMoney(sc);
+                    break;
+                case 4:
+                    printReceipt();
+                    break;
+                case 5:
+                    sessionActive = false;
+                    System.out.println("Thank you for using our ATM. Goodbye, " + userName + "!");
+                    break;
+                default:
+                    System.out.println("Invalid option. Please try again.");
+            }
         }
+    }
+
+    private static void checkBalance() {
+        System.out.println("\nYour Current Balance: " + formatCurrency(userBalance));
+    }
+
+    private static void depositMoney(Scanner sc) {
+        System.out.print("Enter amount to deposit (₹): ");
+        double deposit = sc.nextDouble();
+
+        if (deposit <= 0) {
+            System.out.println("Invalid deposit amount. Please try again.");
+        } else {
+            userBalance += deposit;
+            System.out.println("Deposit successful! New Balance: " + formatCurrency(userBalance));
+        }
+    }
+
+    private static void withdrawMoney(Scanner sc) {
+        System.out.print("Enter amount to withdraw (₹): ");
+        double withdraw = sc.nextDouble();
+
+        if (withdraw <= 0) {
+            System.out.println("Invalid withdrawal amount. Please try again.");
+        } else if (withdraw > userBalance) {
+            System.out.println("Insufficient funds. Your balance is: " + formatCurrency(userBalance));
+        } else {
+            userBalance -= withdraw;
+            System.out.println("Withdrawal successful! New Balance: " + formatCurrency(userBalance));
+        }
+    }
+
+    private static void printReceipt() {
+        printDashedLine(50);
+        System.out.println("\n" + BANK_NAME);
+        System.out.println("Customer Name: " + userName);
+        System.out.println("Available Balance: " + formatCurrency(userBalance));
+        System.out.println("Thank you for banking with us!");
+        printDashedLine(50);
+    }
+
+    private static String formatCurrency(double amount) {
+        // Format the currency to ₹ using the Indian locale
+        NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("en", "IN"));
+        return currencyFormat.format(amount);
+    }
+
+    private static void printDashedLine(int length) {
+        for (int i = 0; i < length; i++) {
+            System.out.print("-");
+        }
+        System.out.println();
     }
 }
